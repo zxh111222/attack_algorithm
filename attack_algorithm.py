@@ -7,7 +7,9 @@ import torch
 from torch.autograd import Variable
 import numpy as np
 import copy
+import matplotlib
 import matplotlib.pyplot as plt
+
 
 class AdversarialAttack:
     def __init__(self, model_path="model_Mnist.pth"):
@@ -16,7 +18,166 @@ class AdversarialAttack:
         self.model.load_state_dict(torch.load(model_path, map_location=torch.device("cuda" if torch.cuda.is_available() else 'cpu')))
         self.model.eval()
 
+    def jsma(self, image, ys_target, theta=1.0, gamma=0.1):
+        """
+        使用JSMA攻击方法对单个图像进行攻击
 
+        Args:
+        - image: 输入图像
+        - ys_target: 目标标签
+        - theta: 扰动步长
+        - gamma: 扰动幅度
+
+        Returns:
+        - perturbed_image: 攻击后的图像
+        - perturbed_label: 攻击后预测得到的标签
+        """
+
+        copy_sample = np.copy(image)
+        var_sample = Variable(torch.from_numpy(copy_sample), requires_grad=True)
+
+        outputs = self.model(var_sample)
+        predicted = torch.max(outputs.data, 1)[1]
+        # print('测试样本扰动前的预测值：{}'.format(predicted[0]))
+
+        var_target = Variable(torch.LongTensor([ys_target, ]))
+
+        if theta > 0:
+            increasing = True
+        else:
+            increasing = False
+
+        num_features = int(np.prod(copy_sample.shape[1:]))
+        shape = var_sample.size()
+
+        # 每次迭代扰动两个像素，因此max_iters被除以2.0
+        max_iters = int(np.ceil(num_features * gamma / 2.0))
+
+        # 掩码搜索域，如果像素已经达到顶部或底部，我们不再修改它。
+        if increasing:
+            search_domain = torch.lt(var_sample, 0.99)
+        else:
+            search_domain = torch.gt(var_sample, 0.01)
+        search_domain = search_domain.view(num_features)
+
+
+        output = self.model(var_sample)
+        original_label = torch.max(output.data, 1)[1].cpu().numpy()
+
+        iter = 0
+        var_sample_flatten = None  # 初始化 var_sample_flatten
+        while (iter < max_iters) and (original_label[0] != ys_target) and (search_domain.sum() != 0):
+            # 计算前向导数的雅可比矩阵
+            jacobian = self.compute_jacobian(self.model, var_sample)
+            # 获取显著性地图并计算对分类最有影响的两个像素
+            p1, p2 = self.saliency_map(jacobian, ys_target, increasing, search_domain, num_features)
+
+            # 初始化 var_sample_flatten
+            if var_sample_flatten is None:
+                var_sample_flatten = var_sample.view(-1, num_features).clone()
+
+            # 应用修改
+            var_sample_flatten[0, p1] += theta
+            var_sample_flatten[0, p2] += theta
+
+            new_sample = torch.clamp(var_sample_flatten, min=0.0, max=1.0)
+            new_sample = new_sample.view(shape)
+            search_domain[p1] = 0
+            search_domain[p2] = 0
+            var_sample = Variable(torch.tensor(new_sample), requires_grad=True)
+
+            output = self.model(var_sample)
+            original_label = torch.max(output.data, 1)[1].numpy()
+            iter += 1
+
+        perturbed_image = var_sample.data.cpu().numpy()
+        perturbed_image_1 = var_sample.data
+        perturbed_label = original_label
+
+        return perturbed_image_1.squeeze(), perturbed_label[0]
+
+    def compute_jacobian(self, model, input):
+        """
+        计算输入对应模型的雅可比矩阵
+
+        Args:
+        - model: PyTorch模型
+        - input: 输入张量
+
+        Returns:
+        - jacobian: 雅可比矩阵
+        """
+        output = model(input)
+        num_features = int(np.prod(input.shape[1:]))
+        jacobian = torch.zeros([output.size()[1], num_features])
+        mask = torch.zeros(output.size())  # 选择要计算的导数
+        for i in range(output.size()[1]):
+            mask[:, i] = 1
+            input.grad = None  # 清零梯度
+            output.backward(mask, retain_graph=True)
+            # 将导数复制到目标位置
+            jacobian[i] = input.grad.squeeze().view(-1, num_features).clone()
+            mask[:, i] = 0  # 重置
+        return jacobian
+
+    def saliency_map(self, jacobian, target_index, increasing, search_space, nb_features):
+        """
+        计算显著性地图
+
+        Args:
+        - jacobian: 雅可比矩阵
+        - target_index: 目标索引
+        - increasing: 增加或减少
+        - search_space: 搜索空间
+        - nb_features: 特征数量
+
+        Returns:
+        - p: 最显著特征索引1
+        - q: 最显著特征索引2
+        """
+        domain = torch.eq(search_space, 1).float()  # 搜索域
+        # 所有特征对每个类的导数之和
+        all_sum = torch.sum(jacobian, dim=0, keepdim=True)
+        target_grad = jacobian[target_index]  # 目标类的正向导数
+        others_grad = all_sum - target_grad  # 其他类的正向导数之和
+
+        # 将不在搜索域内的特征置零
+        if increasing:
+            increase_coef = 2 * (torch.eq(domain, 0)).float()
+        else:
+            increase_coef = -1 * 2 * (torch.eq(domain, 0)).float()
+        increase_coef = increase_coef.view(-1, nb_features)
+
+        # 计算任意两个特征的目标类正向导数之和
+        target_tmp = target_grad.clone().unsqueeze(0)  # 将target_tmp扩展为二维张量
+        target_tmp -= increase_coef * torch.max(torch.abs(target_grad))
+        alpha = target_tmp.view(-1, 1, nb_features) + target_tmp.view(-1, nb_features, 1)
+        # 计算任意两个特征的其他类正向导数之和
+        others_tmp = others_grad.clone()
+        others_tmp += increase_coef * torch.max(torch.abs(others_grad))
+        beta = others_tmp.view(-1, 1, nb_features) + others_tmp.view(-1, nb_features, 1)
+
+        # 将特征与自身相加的情况置零
+        tmp = np.ones((nb_features, nb_features), int)
+        np.fill_diagonal(tmp, 0)
+        zero_diagonal = torch.from_numpy(tmp).byte()
+
+        # 根据论文中显著性地图的定义（公式8和9），不满足要求的显著性地图中的元素将被置零。
+        if increasing:
+            mask1 = torch.gt(alpha, 0.0)
+            mask2 = torch.lt(beta, 0.0)
+        else:
+            mask1 = torch.lt(alpha, 0.0)
+            mask2 = torch.gt(beta, 0.0)
+        # 将掩码应用到显著性地图
+        mask = torch.mul(torch.mul(mask1, mask2), zero_diagonal.view_as(mask1))
+        # 根据论文中的公式10进行乘法
+        saliency_map = torch.mul(torch.mul(alpha, torch.abs(beta)), mask.float())
+        # 获取最显著的两个像素
+        max_value, max_idx = torch.max(saliency_map.view(-1, nb_features * nb_features), dim=1)
+        p = max_idx // nb_features
+        q = max_idx % nb_features
+        return p, q
 
 
     def fgsm(self, index=100, epsilon=0.2):
@@ -214,30 +375,39 @@ if __name__ == "__main__":
     adversarial_image_deepfool, original_label_deepfool, attacked_label_deepfool, orginal_image = attacker.deepfool(image, label,
         overshoot=0.8, max_iter=10)
 
+    # 使用 PGD 攻击
     adversarial_image_pgd, original_label_pgd, attacked_label_pgd = attacker.pgd(image, label)
 
+    # 使用 JSMA 攻击
+    adversarial_image_jsma, attacked_label_jsma = attacker.jsma(image, ys_target=2)
 
-    plt.figure(figsize=(10, 8))  # 设置图形窗口大小
+    plt.figure(figsize=(15, 12))  # 设置图形窗口大小
 
     img_adv_fgsm = transforms.ToPILImage()(x_adv_fgsm)
-    plt.subplot(2, 2, 2)
+    plt.subplot(2, 3, 2)
     plt.title("FGSM Adversarial Image, label:{}".format(attacked_label_fgsm))
     plt.imshow(img_adv_fgsm)
 
     img_adv_deepfool = transforms.ToPILImage()(adversarial_image_deepfool)
-    plt.subplot(2, 2, 3)
+    plt.subplot(2, 3, 3)
     plt.title("DeepFool Adversarial Image, label:{}".format(attacked_label_deepfool))
     plt.imshow(img_adv_deepfool)
 
     img_adv_pgd = transforms.ToPILImage()(adversarial_image_pgd)
-    plt.subplot(2, 2, 4)
-    plt.title("DeepFool Adversarial Image, label:{}".format(attacked_label_pgd))
+    plt.subplot(2, 3, 4)
+    plt.title("PGD Adversarial Image, label:{}".format(attacked_label_pgd))
     plt.imshow(img_adv_pgd)
 
 
+    img_adv_jsma = transforms.ToPILImage()(adversarial_image_jsma)
+    plt.subplot(2, 3, 5)
+    plt.title("JSMA Adversarial Image, label:{}".format(attacked_label_jsma))
+    plt.imshow(img_adv_jsma)
+
+
     img_org = transforms.ToPILImage()(testdata[index][0])
-    plt.subplot(2, 2, 1)
-    plt.title("Original Image, label:{}".format(original_label_fgsm))
+    plt.subplot(2, 3, 1)
+    plt.title("Original Image, label:{}".format(label))
     plt.imshow(img_org)
 
     plt.show()

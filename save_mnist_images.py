@@ -22,8 +22,8 @@ def save_images(images, labels, save_dir):
 
 
 # 读取训练图像和标签
-train_images = read_mnist_images("./data/mnist/MNIST/raw/train-images-idx3-ubyte")
-train_labels = np.fromfile("./data/mnist/MNIST/raw/train-labels-idx1-ubyte", dtype=np.uint8)[8:]
+train_images = read_mnist_images("./mnist/MNIST/raw/train-images-idx3-ubyte")
+train_labels = np.fromfile("./mnist/MNIST/raw/train-labels-idx1-ubyte", dtype=np.uint8)[8:]
 
 # 保存图像到目录
 save_images(train_images, train_labels, "mnist_images")
