@@ -1,0 +1,244 @@
+import torch
+import torchvision
+import torchvision.transforms as transforms
+import torch.nn as nn
+from torch.utils.data import DataLoader
+import torch
+from torch.autograd import Variable
+import numpy as np
+import copy
+import matplotlib.pyplot as plt
+
+class AdversarialAttack:
+    def __init__(self, model_path="model_Mnist.pth"):
+        # 初始化时加载模型
+        self.model = Net()
+        self.model.load_state_dict(torch.load(model_path, map_location=torch.device("cuda" if torch.cuda.is_available() else 'cpu')))
+        self.model.eval()
+
+
+
+
+    def fgsm(self, index=100, epsilon=0.2):
+        # 定义生成对抗样本的方法（FGSM算法）
+        loss_function = nn.CrossEntropyLoss()
+        image, label = testdata[index]
+        image = image.unsqueeze(0)
+        image.requires_grad = True
+        outputs = self.model(image)
+        loss = loss_function(outputs, torch.tensor([label]))
+        loss.backward()
+
+        # 计算梯度
+        x_grad = torch.sign(image.grad.data)
+        # 对抗样本生成
+        x_adversarial = torch.clamp(image.data + epsilon * x_grad, 0, 1)
+
+        # 预测对抗样本
+        outputs = self.model(x_adversarial)
+        predicted = torch.max(outputs.data, 1)[1]
+        original_prediction = label
+        attacked_prediction = predicted.item()
+
+        return x_adversarial.squeeze(), original_prediction, attacked_prediction, label, predicted.item()
+
+    def deepfool(self, img, label, max_iter=10, overshoot=0.02):
+        orig_img = img.clone().detach()
+        orig_img.requires_grad = True
+        fs = self.model(orig_img)
+        orig_label = torch.argmax(fs)
+
+        pert_image = orig_img
+        r_tot = torch.zeros_like(orig_img)
+
+        loop_i = 0
+        while torch.argmax(fs) == orig_label and loop_i < max_iter:
+            pert = np.inf
+            orig_img.grad = None  # 将梯度设为 None
+            if fs[0, orig_label].requires_grad:  # 检查是否需要梯度
+                fs[0, orig_label].backward(retain_graph=True)
+                if orig_img.grad is None:  # 检查梯度是否为 None
+                    break
+                orig_grad = orig_img.grad.data.numpy().copy()
+
+                for k in range(len(fs[0])):
+                    if k == orig_label:
+                        continue
+
+                    orig_img.grad = None  # 将梯度设为 None
+                    if fs[0, k].requires_grad:  # 检查是否需要梯度
+                        fs[0, k].backward(retain_graph=True)
+                        if orig_img.grad is None:  # 检查梯度是否为 None
+                            break
+                        cur_grad = orig_img.grad.data.numpy().copy()
+
+                        w_k = cur_grad - orig_grad
+                        f_k = (fs[0, k] - fs[0, orig_label]).data.numpy()
+
+                        pert_k = abs(f_k) / np.linalg.norm(w_k.flatten())
+                        if pert_k < pert:
+                            pert = pert_k
+                            w = w_k
+
+                r_i = (pert + 1e-4) * w / np.linalg.norm(w)
+                r_tot = r_tot + torch.from_numpy(r_i).to(r_tot.device)
+
+                with torch.no_grad():
+                    pert_image = orig_img + (1 + overshoot) * r_tot
+                    fs = self.model(pert_image)
+
+            loop_i += 1
+
+        return pert_image, orig_label, torch.argmax(fs), orig_img
+
+    def pgd(self, image, label, epsilon=0.2, iter_eps=0.01, nb_iter=40, clip_min=0.0, clip_max=1.0, C=0.0, ord=np.inf,
+            rand_init=True, flag_target=False):
+        # PGD攻击算法
+        loss_function = nn.CrossEntropyLoss()
+        image = image.unsqueeze(0)
+
+
+
+        x_tmp = image.clone().detach()
+        perturbation = torch.zeros_like(image)
+
+        for i in range(nb_iter):
+            perturbation = self.single_step_attack(x_tmp, perturbation, label, epsilon, iter_eps, clip_min, clip_max, C,
+                                                   ord, flag_target)
+            perturbation = torch.Tensor(perturbation).type_as(image)
+
+        adv_image = x_tmp + perturbation
+        adv_image_1 = adv_image
+        adv_image = adv_image.cpu().detach().numpy()
+
+        adv_image = np.clip(adv_image, clip_min, clip_max)
+
+        adv_image_gpu = torch.from_numpy(adv_image)
+        outputs = self.model(adv_image_gpu)
+        predicted = torch.max(outputs.data, 1)[1].item()
+
+        return adv_image_1.squeeze(), label, predicted
+
+    def single_step_attack(self, x, perturbation, label, epsilon, iter_eps, clip_min, clip_max, C, ord, flag_target):
+        adv_x = x + perturbation
+        adv_x = Variable(adv_x)
+        adv_x.requires_grad = True
+
+        loss_function = nn.CrossEntropyLoss()
+        preds = self.model(adv_x)
+
+        if flag_target:
+            loss = -loss_function(preds, torch.tensor([label]))
+        else:
+            loss = loss_function(preds, torch.tensor([label]))
+
+        self.model.zero_grad()
+        loss.backward()
+        grad = adv_x.grad.data
+
+        perturbation = iter_eps * torch.sign(grad)
+        adv_x = adv_x.cpu().detach().numpy() + perturbation.cpu().numpy()
+        x = x.cpu().detach().numpy()
+
+        perturbation = np.clip(adv_x, clip_min, clip_max) - x
+        perturbation = self.clip_perturbation(perturbation, ord, epsilon)
+
+        return perturbation
+
+    def clip_perturbation(self, perturbation, ord, epsilon):
+        if ord == np.inf:
+            perturbation = np.clip(perturbation, -epsilon, epsilon)
+        else:
+            raise NotImplementedError("Only L-infinity norm is supported.")
+
+        return perturbation
+
+
+class Net(torch.nn.Module):
+    def __init__(self):
+        # 使用super继承父类的属性和方法，torch.nn中有基本的卷积层，池化层，全连接层等组件
+        super(Net, self).__init__()
+        self.convl = torch.nn.Sequential(
+            # 定义了一个二维卷积层，输入通道数为1（灰度图像），输出通道数为10，卷积核大小为5x5
+            torch.nn.Conv2d(1, 10, kernel_size=5),
+            torch.nn.ReLU(),
+            torch.nn.MaxPool2d(kernel_size=2),
+        )
+
+        self.conv2 = torch.nn.Sequential(
+            torch.nn.Conv2d(10, 20, kernel_size=5),
+            torch.nn.ReLU(),
+            torch.nn.MaxPool2d(kernel_size=2)
+        )
+        self.fc = torch.nn.Sequential(
+            # 比起torch.nn.Linear(320,10),多了一个隐藏层对输入进行特征提取和转换，提高模型的表达能力和泛化能力
+            torch.nn.Linear(320, 50),
+            torch.nn.Linear(50, 10),
+        )
+
+    def forward(self, x):
+        # x是输入的张量，它的shape为 (batch_size, channels, height, width)。
+        batch_size = x.size(0)
+        x = self.convl(x)  # 一层卷积层,一层池化层,一层激活层(图是先卷积后激活再池化，差别不大)
+        x = self.conv2(x)  # 再来一次
+        x = x.view(batch_size, -1)  # flatten 变成全连接网络需要的输入 (batch, 20,4,4) ==> (batch,320), -1 此处自动算出的是320
+        x = self.fc(x)
+        return x  # 最后输出的是维度为10的，也就是（对应数学符号的0~9）
+
+
+
+
+
+if __name__ == "__main__":
+    mnist_transform = transforms.Compose([
+        transforms.ToTensor(),
+    ])
+    traindata = torchvision.datasets.MNIST(root="./mnist", train=True, download=True, transform=mnist_transform)
+    testdata = torchvision.datasets.MNIST(root="./mnist", train=False, download=True, transform=mnist_transform)
+    train_loader = DataLoader(traindata, batch_size=256, shuffle=True, num_workers=0)
+    test_loader = DataLoader(testdata, batch_size=256, shuffle=True, num_workers=0)
+
+    attacker = AdversarialAttack()
+
+    index = 100
+    epsilon = 0.2
+
+    image, label = testdata[index]
+
+
+    # 使用 FGSM 攻击
+    x_adv_fgsm, original_pred_fgsm, attacked_pred_fgsm, original_label_fgsm, attacked_label_fgsm = attacker.fgsm(
+        index, epsilon)
+
+    # 使用 DeepFool 攻击
+    adversarial_image_deepfool, original_label_deepfool, attacked_label_deepfool, orginal_image = attacker.deepfool(image, label,
+        overshoot=0.8, max_iter=10)
+
+    adversarial_image_pgd, original_label_pgd, attacked_label_pgd = attacker.pgd(image, label)
+
+
+    plt.figure(figsize=(10, 8))  # 设置图形窗口大小
+
+    img_adv_fgsm = transforms.ToPILImage()(x_adv_fgsm)
+    plt.subplot(2, 2, 2)
+    plt.title("FGSM Adversarial Image, label:{}".format(attacked_label_fgsm))
+    plt.imshow(img_adv_fgsm)
+
+    img_adv_deepfool = transforms.ToPILImage()(adversarial_image_deepfool)
+    plt.subplot(2, 2, 3)
+    plt.title("DeepFool Adversarial Image, label:{}".format(attacked_label_deepfool))
+    plt.imshow(img_adv_deepfool)
+
+    img_adv_pgd = transforms.ToPILImage()(adversarial_image_pgd)
+    plt.subplot(2, 2, 4)
+    plt.title("DeepFool Adversarial Image, label:{}".format(attacked_label_pgd))
+    plt.imshow(img_adv_pgd)
+
+
+    img_org = transforms.ToPILImage()(testdata[index][0])
+    plt.subplot(2, 2, 1)
+    plt.title("Original Image, label:{}".format(original_label_fgsm))
+    plt.imshow(img_org)
+
+    plt.show()
+
