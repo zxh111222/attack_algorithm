@@ -212,7 +212,7 @@ class AdversarialAttack:
         return x_adversarial.squeeze(), original_prediction, attacked_prediction, label, predicted.item()
 
     def deepfool(self, img, label, max_iter=10, overshoot=0.02):
-        orig_img = img.copy()
+        orig_img = img.clone().detach()
         orig_img.requires_grad = True
         fs = self.model(orig_img)
         orig_label = torch.argmax(fs)
@@ -369,7 +369,7 @@ if __name__ == "__main__":
 
     attacker = AdversarialAttack()
 
-    index = 100
+    index = 80
     epsilon = 0.2
 
     image, label = testdata[index]
