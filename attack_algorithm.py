@@ -17,6 +17,14 @@ class AdversarialAttack:
         self.model = Net()
         self.model.load_state_dict(torch.load(model_path, map_location=torch.device("cuda" if torch.cuda.is_available() else 'cpu')))
         self.model.eval()
+        self.mnist_transform = transforms.Compose([
+            transforms.ToTensor(),
+        ])
+        self.traindata = torchvision.datasets.MNIST(root="./mnist", train=True, download=True, transform=self.mnist_transform)
+        self.testdata = torchvision.datasets.MNIST(root="./mnist", train=False, download=True, transform=self.mnist_transform)
+        self.train_loader = DataLoader(self.traindata, batch_size=256, shuffle=True, num_workers=0)
+        self.test_loader = DataLoader(self.testdata, batch_size=256, shuffle=True, num_workers=0)
+
 
     def jsma(self, image, ys_target, theta=1.0, gamma=0.1):
         """
@@ -183,7 +191,7 @@ class AdversarialAttack:
     def fgsm(self, index=100, epsilon=0.2):
         # 定义生成对抗样本的方法（FGSM算法）
         loss_function = nn.CrossEntropyLoss()
-        image, label = testdata[index]
+        image, label = self.testdata[index]
         image = image.unsqueeze(0)
         image.requires_grad = True
         outputs = self.model(image)
@@ -204,7 +212,7 @@ class AdversarialAttack:
         return x_adversarial.squeeze(), original_prediction, attacked_prediction, label, predicted.item()
 
     def deepfool(self, img, label, max_iter=10, overshoot=0.02):
-        orig_img = img.clone().detach()
+        orig_img = img.copy()
         orig_img.requires_grad = True
         fs = self.model(orig_img)
         orig_label = torch.argmax(fs)
@@ -368,8 +376,7 @@ if __name__ == "__main__":
 
 
     # 使用 FGSM 攻击
-    x_adv_fgsm, original_pred_fgsm, attacked_pred_fgsm, original_label_fgsm, attacked_label_fgsm = attacker.fgsm(
-        index, epsilon)
+    x_adv_fgsm, original_pred_fgsm, attacked_pred_fgsm, original_label_fgsm, attacked_label_fgsm = attacker.fgsm(index, epsilon)
 
     # 使用 DeepFool 攻击
     adversarial_image_deepfool, original_label_deepfool, attacked_label_deepfool, orginal_image = attacker.deepfool(image, label,
