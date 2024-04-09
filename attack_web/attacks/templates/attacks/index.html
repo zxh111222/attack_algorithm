@@ -19,5 +19,12 @@
         <input type="number" name="image_index" id="image_index" value="100"><br><br>
         <input type="submit" value="Attack">
     </form>
+
+    <form action="/logout/" method="post">
+        {% csrf_token %}
+        <input type="submit" value="Logout">
+    </form>
+
+
 </body>
 </html>

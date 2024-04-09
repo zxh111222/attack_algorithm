@@ -1,16 +1,93 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.core.files.base import ContentFile
 from .adversarial_attack import AdversarialAttack
 import base64
 import os
+import csv
 import uuid
 import numpy as np
 from PIL import Image
 from io import BytesIO
 
+# CSV文件路径
+CSV_FILE_PATH = 'users.csv'
+
+
+def register(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        # 检查用户名是否已经存在
+        if not is_user_exists(username):
+            # 写入CSV文件
+            with open(CSV_FILE_PATH, mode='a', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow([username, password])
+
+            # 注册成功后重定向到登录页面
+            return redirect('login')
+        else:
+            # 用户名已存在，返回注册页面并显示错误信息
+            return render(request, 'attacks/register.html', {'error_message': '用户名已存在'})
+
+    return render(request, 'attacks/register.html')
+
+
+def login(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        # 检查用户名和密码是否匹配
+        if is_valid_credentials(username, password):
+            # 登录成功后设置session变量，并重定向到首页
+            request.session['login_successful'] = True
+            return redirect('index')
+        else:
+            # 登录失败，返回登录页面并显示错误信息
+            return render(request, 'attacks/login.html', {'error_message': '用户名或密码错误'})
+
+    return render(request, 'attacks/login.html')
+
+
+def is_user_exists(username):
+    # 检查用户名是否已经存在于CSV文件中
+    with open(CSV_FILE_PATH, mode='r') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            if row[0] == username:
+                return True
+    return False
+
+
+def is_valid_credentials(username, password):
+    # 检查用户名和密码是否匹配
+    with open(CSV_FILE_PATH, mode='r') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            if row[0] == username and row[1] == password:
+                return True
+    return False
+
+
+
+def logout(request):
+    # 清除登录状态
+    if 'login_successful' in request.session:
+        del request.session['login_successful']
+
+    # 重定向到登录页面
+    return redirect('login')
+
+
+
 def index(request):
     return render(request, 'attacks/index.html')
+
+
+
 
 
 def attack(request):
