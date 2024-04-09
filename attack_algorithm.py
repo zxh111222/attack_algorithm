@@ -191,6 +191,7 @@ class AdversarialAttack:
     def fgsm(self, index=100, epsilon=0.2):
         # 定义生成对抗样本的方法（FGSM算法）
         loss_function = nn.CrossEntropyLoss()
+        print(traindata[index])
         image, label = self.testdata[index]
         image = image.unsqueeze(0)
         image.requires_grad = True
