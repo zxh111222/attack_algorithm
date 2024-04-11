@@ -16,13 +16,15 @@
         }
 
         .container {
+            background-color: #fff;
             width: 80%;
             max-width: 400px;
-            background-color: #fff;
-            padding: 20px;
+            padding: 5px;
             border-radius: 8px;
             box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
-            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         h1 {
@@ -40,21 +42,16 @@
 
         label {
             margin-top: 10px;
-            font-weight: bold;
+            width: 100%;
         }
 
         input[type="text"],
         input[type="password"] {
-            margin-top: 5px;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            margin-top: 10px;
             width: 100%;
-            box-sizing: border-box;
         }
 
-        input[type="submit"],
-        input[type="button"] {
+        input[type="submit"] {
             margin-top: 20px;
             padding: 10px 20px;
             background-color: #4CAF50;
@@ -65,13 +62,33 @@
             transition: background-color 0.3s ease;
         }
 
-        input[type="submit"]:hover,
-        input[type="button"]:hover {
+        input[type="button"] {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #008CBA;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+
+        input[type="submit"]:hover {
             background-color: #45a049;
+        }
+
+        input[type="button"]:hover {
+            background-color: #0879B9;
+        }
+
+        .register-button {
+            margin-left:0px;
         }
 
         .cancel-button {
             background-color: #f44336;
+            margin-right:0px;
         }
 
         .cancel-button:hover {
@@ -91,8 +108,10 @@
             <input type="text" id="username" name="username">
             <label for="password">密码:</label>
             <input type="password" id="password" name="password">
-            <input type="submit" value="注册">
-            <input type="button" class="cancel-button" value="取消注册" onclick="window.location.href='{% url 'return_to_login' %}'">
+            <div style="display: flex; justify-content: space-between; width: 100%;">
+                <input class="register-button" type="submit" value="注册">
+                <input type="button" class="cancel-button" value="取消注册" onclick="window.location.href='{% url 'return_to_login' %}'">
+            </div>
         </form>
     </div>
 </body>
