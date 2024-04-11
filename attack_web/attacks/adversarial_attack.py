@@ -26,14 +26,23 @@ class AdversarialAttack:
         self.test_loader = DataLoader(self.testdata, batch_size=256, shuffle=True, num_workers=0)
 
 
-    def read_img(self, index=100):
-        image, label = self.traindata[index]
-        image = image.unsqueeze(0)
-        return image, label
+    # def read_img(self, index=100):
+    #     image, label = self.traindata[index]
+    #     image = image.unsqueeze(0)
+    #     return image, label
 
 
+    def predict_img(self, image):
+        # 进行模型推理，得到预测结果
+        with torch.no_grad():
+            output = self.model(image)
+            # 获取预测结果中概率最高的类别
+            _, predicted = torch.max(output, 1)
+            # 返回预测结果
+            return predicted.item()
 
-    def jsma(self, index=100, ys_target=2, theta=1.0, gamma=0.1):
+
+    def jsma(self, image, label, ys_target=2, theta=1.0, gamma=0.1):
         """
         使用JSMA攻击方法对单个图像进行攻击
 
@@ -47,8 +56,8 @@ class AdversarialAttack:
         - perturbed_image: 攻击后的图像
         - perturbed_label: 攻击后预测得到的标签
         """
-        image, label = self.traindata[index]
-        image = image.unsqueeze(0)
+        # image, label = self.traindata[index]
+        # image = image.unsqueeze(0)
         copy_sample = np.copy(image)
         var_sample = Variable(torch.from_numpy(copy_sample.astype(np.float32)), requires_grad=True)
 
@@ -198,15 +207,14 @@ class AdversarialAttack:
         q = max_idx % nb_features
         return p, q
 
-
-    def fgsm(self, index=100, epsilon=0.2):
+    def fgsm(self, image, label, epsilon=0.2):
         # 定义生成对抗样本的方法（FGSM算法）
         loss_function = nn.CrossEntropyLoss()
-        image, label = self.traindata[index]
-        image = image.unsqueeze(0)
         image.requires_grad = True
         outputs = self.model(image)
-        loss = loss_function(outputs, torch.tensor([label]))
+        # _, label = torch.max(outputs, 1)
+        label = torch.tensor(label)
+        loss = loss_function(outputs, label.unsqueeze(0))
         loss.backward()
 
         # 计算梯度
@@ -216,21 +224,20 @@ class AdversarialAttack:
 
         # 预测对抗样本
         outputs = self.model(x_adversarial)
-        predicted = torch.max(outputs.data, 1)[1]
-        original_prediction = label
-        attacked_prediction = predicted.item()
+        predicted = torch.max(outputs, 1)[1].item()
+        original_prediction = label.item()
 
         return {
             'adversarial_image': x_adversarial.squeeze(),
             'original_prediction': original_prediction,
-            'attacked_label': attacked_prediction,
-            'original_label': label,
+            'attacked_label': predicted,
+            'original_label': original_prediction,
         }
 
-    def deepfool(self, index=100, max_iter=10, overshoot=0.8):
-        image, label = self.traindata[index]
-        img = image.unsqueeze(0)
-        orig_img = img.clone().detach()
+    def deepfool(self, image, label, max_iter=10, overshoot=0.5):
+        # image, label = self.traindata[index]
+        # img = image.unsqueeze(0)
+        orig_img = image.clone().detach()
         orig_img.requires_grad = True
         fs = self.model(orig_img)
         orig_label = torch.argmax(fs)
@@ -283,12 +290,12 @@ class AdversarialAttack:
             'original_image': orig_img
         }
 
-    def pgd(self, index=100, epsilon=0.2, iter_eps=0.01, nb_iter=40, clip_min=0.0, clip_max=1.0, C=0.0, ord=np.inf,
+    def pgd(self, image, label, epsilon=0.2, iter_eps=0.01, nb_iter=40, clip_min=0.0, clip_max=1.0, C=0.0, ord=np.inf,
             rand_init=True, flag_target=False):
         # PGD攻击算法
         loss_function = nn.CrossEntropyLoss()
-        image, label = self.traindata[index]
-        image = image.unsqueeze(0)
+        # image, label = self.traindata[index]
+        # image = image.unsqueeze(0)
 
 
 
@@ -401,48 +408,48 @@ if __name__ == "__main__":
     epsilon = 0.2
 
     image, label = traindata[index]
-
-
-    # 使用 FGSM 攻击
-    result_fgsm = attacker.fgsm(index=100, epsilon=0.2)
-
-    # 使用 DeepFool 攻击
-    result_deepfool = attacker.deepfool(index=100, overshoot=0.8, max_iter=10)
-
-    # 使用 PGD 攻击
-    result_pgd = attacker.pgd(index=100)
-
-    # 使用 JSMA 攻击
-    result_jsma = attacker.jsma(index=100, ys_target=2)
-
-    plt.figure(figsize=(15, 12))  # 设置图形窗口大小
-
-    img_adv_fgsm = transforms.ToPILImage()(result_fgsm['adversarial_image'])
-    plt.subplot(2, 3, 2)
-    plt.title("FGSM Adversarial Image, label:{}".format(result_fgsm['attacked_label']))
-    plt.imshow(img_adv_fgsm)
-
-    img_adv_deepfool = transforms.ToPILImage()(result_deepfool['adversarial_image'])
-    plt.subplot(2, 3, 3)
-    plt.title("DeepFool Adversarial Image, label:{}".format(result_deepfool['attacked_label']))
-    plt.imshow(img_adv_deepfool)
-
-    img_adv_pgd = transforms.ToPILImage()(result_pgd['adversarial_image'])
-    plt.subplot(2, 3, 4)
-    plt.title("PGD Adversarial Image, label:{}".format(result_pgd['attacked_label']))
-    plt.imshow(img_adv_pgd)
-
-
-    img_adv_jsma = transforms.ToPILImage()(result_jsma['adversarial_image'])
-    plt.subplot(2, 3, 5)
-    plt.title("JSMA Adversarial Image, label:{}".format(result_jsma['attacked_label']))
-    plt.imshow(img_adv_jsma)
-
-
-    img_org = transforms.ToPILImage()(traindata[index][0])
-    plt.subplot(2, 3, 1)
-    plt.title("Original Image, label:{}".format(label))
-    plt.imshow(img_org)
-
-    plt.show()
-
+    #
+    #
+    # # 使用 FGSM 攻击
+    # result_fgsm = attacker.fgsm(index=100, epsilon=0.2)
+    #
+    # # 使用 DeepFool 攻击
+    # result_deepfool = attacker.deepfool(index=100, overshoot=0.8, max_iter=10)
+    #
+    # # 使用 PGD 攻击
+    # result_pgd = attacker.pgd(index=100)
+    #
+    # # 使用 JSMA 攻击
+    # result_jsma = attacker.jsma(index=100, ys_target=2)
+    #
+    # plt.figure(figsize=(15, 12))  # 设置图形窗口大小
+    #
+    # img_adv_fgsm = transforms.ToPILImage()(result_fgsm['adversarial_image'])
+    # plt.subplot(2, 3, 2)
+    # plt.title("FGSM Adversarial Image, label:{}".format(result_fgsm['attacked_label']))
+    # plt.imshow(img_adv_fgsm)
+    #
+    # img_adv_deepfool = transforms.ToPILImage()(result_deepfool['adversarial_image'])
+    # plt.subplot(2, 3, 3)
+    # plt.title("DeepFool Adversarial Image, label:{}".format(result_deepfool['attacked_label']))
+    # plt.imshow(img_adv_deepfool)
+    #
+    # img_adv_pgd = transforms.ToPILImage()(result_pgd['adversarial_image'])
+    # plt.subplot(2, 3, 4)
+    # plt.title("PGD Adversarial Image, label:{}".format(result_pgd['attacked_label']))
+    # plt.imshow(img_adv_pgd)
+    #
+    #
+    # img_adv_jsma = transforms.ToPILImage()(result_jsma['adversarial_image'])
+    # plt.subplot(2, 3, 5)
+    # plt.title("JSMA Adversarial Image, label:{}".format(result_jsma['attacked_label']))
+    # plt.imshow(img_adv_jsma)
+    #
+    #
+    # img_org = transforms.ToPILImage()(traindata[index][0])
+    # plt.subplot(2, 3, 1)
+    # plt.title("Original Image, label:{}".format(label))
+    # plt.imshow(img_org)
+    #
+    # plt.show()
+    #

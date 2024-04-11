@@ -1,6 +1,9 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.files.base import ContentFile
+import torch
+from torchvision import transforms
 from .adversarial_attack import AdversarialAttack
 import base64
 import os
@@ -91,62 +94,74 @@ def index(request):
 
 
 def attack(request):
+    error_message = None  # 用于存储错误消息
     if request.method == 'POST':
-        # 获取请求中的参数
+        # 获取攻击类型和上传的图像文件
         attack_type = request.POST.get('attack_type')
-        image_index = int(request.POST.get('image_index'))
-        # 创建 AdversarialAttack 实例
-        attack = AdversarialAttack()
-        from PIL import Image
-        # 先读取原始图片
-        original_image_tensor, original_label = attack.read_img(image_index)
-        # 将原始图片转换为 NumPy 数组
-        original_image_np = original_image_tensor.numpy().squeeze()
-        # 将 NumPy 数组反归一化
-        original_image_np_denormalized = denormalize_image(original_image_np)
-        # 将 NumPy 数组转换为 PIL 图像
-        original_image_pil = Image.fromarray(np.uint8(original_image_np_denormalized))
-        # 调整图像大小，保持灰度图像
-        original_image_pil_resized = original_image_pil.resize((300, 300), Image.LANCZOS)
-        # 将调整大小后的 PIL 图像转换为 base64 编码字符串
-        original_image_base64 = image_to_base64(original_image_pil_resized)
+        image_file = request.FILES.get('image_file')
 
-        # 执行相应的攻击
-        if attack_type == 'fgsm':
-            result = attack.fgsm(image_index)
-        elif attack_type == 'pgd':
-            result = attack.pgd(image_index)
-        elif attack_type == 'deepfool':
-            result = attack.deepfool(image_index)
-        elif attack_type == 'jsma':
-            result = attack.jsma(image_index)
+        if image_file:
+            # 读取上传的图像文件
+            original_image_pil = Image.open(image_file)
+
+            # 将图像转换为 PyTorch 张量并调整大小（28x28）
+            transform = transforms.Compose([transforms.Grayscale(),  # 转换为灰度图像
+                                            transforms.Resize((28, 28)),  # 调整大小为 28x28
+                                            transforms.ToTensor()])
+            original_image_tensor = transform(original_image_pil).unsqueeze(0)
+
+            # 使用 AdversarialAttack 类中的 predict_img 函数进行图像预测
+            attack = AdversarialAttack()
+            original_label = attack.predict_img(original_image_tensor)
+
+            # 对图像执行攻击
+            result = None  # 攻击结果的占位符
+
+            # 执行所选择的攻击
+            if attack_type == 'fgsm':
+                result = attack.fgsm(original_image_tensor, original_label)
+            elif attack_type == 'pgd':
+                result = attack.pgd(original_image_tensor, original_label)
+            elif attack_type == 'deepfool':
+                result = attack.deepfool(original_image_tensor, original_label)
+            elif attack_type == 'jsma':
+                result = attack.jsma(original_image_tensor, original_label, ys_target=2)
+
+            # 准备结果数据
+            if result:
+                adversarial_image_base64 = None
+                if 'adversarial_image' in result:
+                    # 将对抗图像转换为 base64，并调整大小（300x300）
+                    adversarial_image_tensor = result['adversarial_image']
+                    adversarial_image_pil = transforms.ToPILImage()(adversarial_image_tensor.cpu().squeeze())
+                    adversarial_image_base64 = image_to_base64(adversarial_image_pil)
+
+                # 将原始图像转换为 base64，并调整大小（300x300）
+                # original_image_pil_resized = original_image_pil.resize((300, 300), Image.LANCZOS)
+                # original_image_base64 = image_to_base64(original_image_pil_resized)
+                # adversarial_image_pil = adversarial_image_pil.resize((300, 300), Image.LANCZOS)
+                # adversarial_image_base64 = image_to_base64(adversarial_image_pil)
+
+                original_image_pil = transforms.ToPILImage()(original_image_tensor.cpu().squeeze())
+                original_image_base64 = image_to_base64(original_image_pil)
+
+
+                result_data = {
+                    'original_image': original_image_base64,
+                    'adversarial_image': adversarial_image_base64,
+                    'original_label': original_label,
+                    'attacked_label': result['attacked_label']
+                }
+
+                return render(request, 'attacks/result.html', {'result': result_data})
+            else:
+                error_message = "攻击失败。"
         else:
-            result = None
+            error_message = "未上传图像。"
 
-        # 如果结果不为 None，处理图像数据
-        if result:
-            if 'adversarial_image' in result:
-                # 将对抗图像转换为 NumPy 数组
-                adversarial_image_np = result['adversarial_image'].numpy()
-                adversarial_image_np_denormalized = denormalize_image(adversarial_image_np)
-                # 将 NumPy 数组转换为 PIL 图像
-                adversarial_image_pil = Image.fromarray(np.uint8(adversarial_image_np_denormalized))
-                adversarial_image_pil = adversarial_image_pil.resize((300, 300))
-                # 将 PIL 图像转换为 base64 编码字符串
-                adversarial_image_base64 = image_to_base64(adversarial_image_pil)
+    return render(request, 'attacks/index.html', {'error_message': error_message})
 
-            # 将处理后的结果添加到 result 字典中
-            result = {
-                'original_image': original_image_base64,
-                'adversarial_image': adversarial_image_base64,
-                'original_label': original_label,
-                'attacked_label': result['attacked_label']
-            }
 
-        # 渲染结果页面
-        return render(request, 'attacks/result.html', {'result': result})
-    else:
-        return HttpResponse("Invalid request")
 
 
 def image_to_base64(image):

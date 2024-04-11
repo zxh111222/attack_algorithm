@@ -1,36 +1,129 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attack Result</title>
+    <title>攻击结果</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f2f2f2;
+        }
+
+        .container {
+            width: 80%;
+            max-width: 800px;
+            text-align: center;
+            margin-bottom: 20px; /* 为了按钮不贴在底部 */
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin-top: 40px;
+        }
+
+        .image-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .image-container img {
+            width: 250px;
+            height: 250px;
+            margin: 10px 30px;
+        }
+
+        .prediction-info {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .prediction-info p {
+            margin: 0 10px;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin: 0 10px; /* 按钮之间的间距 */
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        form {
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Attack Result</h1>
-    {% if result %}
-        <h2>Original Image</h2>
-        <img src="data:image/png;base64,{{ result.original_image }}" alt="Original Image">
+    <div class="container">
+        <h1>攻击后原始图像和对抗图像对比</h1>
+        {% if result %}
 
-        {% if result.adversarial_image %}
-            <h2>Adversarial Image</h2>
-            <img src="data:image/png;base64,{{ result.adversarial_image }}" alt="Adversarial Image">
+            <div class="image-container">
+                <h2>原始图像:</h2>
+                <img src="data:image/png;base64,{{ result.original_image }}" alt="原始图像">
+            </div>
 
-            <!-- 保存被攻击的图像的按钮 -->
-            <button id="saveImageButton">Save Adversarial Image</button>
+            {% if result.adversarial_image %}
+
+                <div class="image-container">
+                    <h2>对抗图像:</h2>
+                    <img src="data:image/png;base64,{{ result.adversarial_image }}" alt="对抗图像">
+                </div>
+
+                <!-- 保存对抗图像的按钮 -->
+                <button id="saveImageButton">保存对抗图像</button>
+
+                <!-- 返回按钮 -->
+                <button form="backToIndexForm" type="submit">返回首页</button>
+
+            {% endif %}
+
+            <div class="prediction-info">
+                <p>原始预测：{{ result.original_label }}</p>
+                <p>攻击后预测：{{ result.attacked_label }}</p>
+            </div>
+
+            <!-- 返回按钮 -->
+            <form id="backToIndexForm" action="{% url 'index' %}" method="get" style="display: none;">
+                <!-- 这里的 style="display: none;" 是为了在点击按钮时不显示表单 -->
+                <input type="hidden">
+            </form>
+
+        {% else %}
+            <p>无结果可用。</p>
         {% endif %}
-
-        <p>Original Prediction: {{ result.original_label }}</p>
-        <p>Attacked Prediction: {{ result.attacked_label }}</p>
-
-        <!-- 返回按钮 -->
-        <form action="{% url 'index' %}" method="get">
-            <input type="submit" value="Back to Index">
-        </form>
-
-    {% else %}
-        <p>No result available.</p>
-    {% endif %}
+    </div>
 
     <script>
         // JavaScript 代码，用于异步保存图像

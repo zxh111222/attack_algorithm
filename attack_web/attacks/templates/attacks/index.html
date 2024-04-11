@@ -2,29 +2,95 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Adversarial Attack</title>
+    <title>选择攻击类型</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f2f2f2;
+        }
+
+        .container {
+            width: 80%;
+            max-width: 600px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        select, input[type="file"], input[type="submit"] {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        input[type="file"] {
+            padding: 5px;
+        }
+
+        form:last-child {
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Choose Attack Type</h1>
-    <form action="/attack/" method="post">
-        {% csrf_token %}
-        <label for="attack_type">Select Attack Type:</label>
-        <select name="attack_type" id="attack_type">
-            <option value="fgsm">FGSM</option>
-            <option value="pgd">PGD</option>
-            <option value="deepfool">DeepFool</option>
-            <option value="jsma">JSMA</option>
-        </select><br><br>
-        <label for="image_index">Image Index:</label>
-        <input type="number" name="image_index" id="image_index" value="100"><br><br>
-        <input type="submit" value="Attack">
-    </form>
+    <div class="container">
+        <h1>选择攻击类型</h1>
 
-    <form action="/logout/" method="post">
-        {% csrf_token %}
-        <input type="submit" value="Logout">
-    </form>
+        {% if error_message %}
+            <p style="color: red;">{{ error_message }}</p>
+        {% endif %}
 
+        <form action="/attack/" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <label for="attack_type">选择攻击类型：</label>
+            <select name="attack_type" id="attack_type">
+                <option value="fgsm">FGSM</option>
+                <option value="pgd">PGD</option>
+                <option value="deepfool">DeepFool</option>
+                <option value="jsma">JSMA</option>
+            </select><br><br>
+            <label for="image_file">选择图像：</label>
+            <input type="file" name="image_file" id="image_file"><br><br>
+            <input type="submit" value="发起攻击">
+        </form>
 
+        <form action="/logout/" method="post">
+            {% csrf_token %}
+            <input type="submit" value="登出">
+        </form>
+    </div>
 </body>
 </html>
