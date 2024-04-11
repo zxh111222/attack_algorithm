@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>选择攻击类型</title>
+    {% load static %}
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -23,6 +24,8 @@
             border-radius: 8px;
             box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
             text-align: center;
+            display: flex;
+            flex-direction: column;
         }
 
         h1 {
@@ -36,7 +39,7 @@
         }
 
         select, input[type="file"], input[type="submit"] {
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
@@ -44,7 +47,41 @@
             box-sizing: border-box;
         }
 
+        .selection-img {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+        }
+
+        .choose {
+            margin-bottom: 20px;
+        }
+
+        .choose button {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #f2f2f2;
+        }
+
+        .image-preview-container {
+            margin-left: 80px; /* 间距 */
+        }
+
+        #image_preview {
+            height: 150px;
+            width: 150px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+
+
         input[type="submit"] {
+            margin-top: 15px;
             background-color: #4CAF50;
             color: white;
             border: none;
@@ -83,8 +120,14 @@
                 <option value="jsma">JSMA</option>
             </select><br><br>
             <div class="selection-img">
-                <label for="image_file">选择图像：</label>
-                <input type="file" name="image_file" id="image_file"><br><br>
+                <div class="choose">
+                    <label for="image_file">选择图像：</label>
+                    <button type="button" onclick="document.getElementById('image_file').click()">选择文件</button>
+                    <input type="file" name="image_file" id="image_file" style="display: none;" onchange="previewImage(event)">
+                </div>
+                <div class="image-preview-container">
+                    <img id="image_preview" src="{% static '1.jpg' %}" alt="Image Preview">
+                </div>
             </div>
             <input type="submit" value="发起攻击">
         </form>
@@ -94,5 +137,16 @@
             <input type="submit" value="登出">
         </form>
     </div>
+
+    <script>
+        function previewImage(event) {
+            var reader = new FileReader();
+            reader.onload = function(){
+                var imagePreview = document.getElementById('image_preview');
+                imagePreview.src = reader.result;
+            }
+            reader.readAsDataURL(event.target.files[0]);
+        }
+    </script>
 </body>
 </html>
