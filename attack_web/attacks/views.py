@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.files.base import ContentFile
 import torch
@@ -99,6 +99,7 @@ def attack(request):
         # 获取攻击类型和上传的图像文件
         attack_type = request.POST.get('attack_type')
         image_file = request.FILES.get('image_file')
+        ys_target = request.POST.get('ys_target')  # 获取 ys_target 参数
 
         if image_file:
             # 读取上传的图像文件
@@ -125,7 +126,11 @@ def attack(request):
             elif attack_type == 'deepfool':
                 result = attack.deepfool(original_image_tensor, original_label)
             elif attack_type == 'jsma':
-                result = attack.jsma(original_image_tensor, original_label, ys_target=2)
+                if ys_target:
+                    ys_target_int = int(ys_target)
+                else:
+                    ys_target_int = 9
+                result = attack.jsma(original_image_tensor, original_label, ys_target=ys_target_int)
 
             # 准备结果数据
             if result:
@@ -180,8 +185,6 @@ def denormalize_image(image):
     return image
 
 
-from django.http import JsonResponse
-
 
 def save_adversarial_images(request):
     if request.method == 'POST':
@@ -219,5 +222,10 @@ def save_adversarial_images(request):
         # 如果不是 POST 请求，则返回错误的 JSON 响应
         return JsonResponse({'error': 'Invalid request method.'})
 
+
+def get_target_labels(request):
+    # 从模型文件中获取标签信息，这里假设labels是一个包含所有标签的列表
+    labels = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+    return JsonResponse(labels, safe=False)
 
 

@@ -110,15 +110,22 @@
             <p style="color: red;">{{ error_message }}</p>
         {% endif %}
 
-        <form action="/attack/" method="post" enctype="multipart/form-data">
+        <form id="attack_form" action="/attack/" method="post" enctype="multipart/form-data">
             {% csrf_token %}
+            <input type="hidden" name="ys_target" id="ys_target" value="">
             <label for="attack_type">选择攻击类型：</label>
-            <select name="attack_type" id="attack_type">
+            <select name="attack_type" id="attack_type" onchange="toggleTargetLabel()">
                 <option value="fgsm">FGSM</option>
                 <option value="pgd">PGD</option>
                 <option value="deepfool">DeepFool</option>
                 <option value="jsma">JSMA</option>
             </select><br><br>
+            <div id="target_label_select" style="display: none;">
+                <label for="target_label">选择攻击成的标签：</label>
+                <select name="target_label" id="target_label">
+                    <!-- 这里的选项将由JavaScript动态填充 -->
+                </select>
+            </div>
             <div class="selection-img">
                 <div class="choose">
                     <label for="image_file">选择图像：</label>
@@ -129,7 +136,7 @@
                     <img id="image_preview" src="{% static '1.jpg' %}" alt="Image Preview">
                 </div>
             </div>
-            <input type="submit" value="发起攻击">
+            <input type="submit" value="发起攻击" onclick="submitForm()">
         </form>
 
         <form action="/logout/" method="post">
@@ -147,6 +154,51 @@
             }
             reader.readAsDataURL(event.target.files[0]);
         }
+
+        function toggleTargetLabel() {
+            var attackTypeSelect = document.getElementById("attack_type");
+            var targetLabelDiv = document.getElementById("target_label_select");
+
+            if (attackTypeSelect.value === "jsma") {
+                targetLabelDiv.style.display = "block";
+                console.log("JSMA attack type selected"); //
+                // 发送AJAX请求获取模型中的标签信息
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", "/get_target_labels/", true);
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState == 4 && xhr.status == 200) {
+                        var labels = JSON.parse(xhr.responseText);
+                        var targetLabelSelect = document.getElementById("target_label");
+                        targetLabelSelect.innerHTML = ""; // 清空之前的选项
+                        labels.forEach(function(label) {
+                            var option = document.createElement("option");
+                            option.text = label;
+                            option.value = label;
+                            targetLabelSelect.add(option);
+                        });
+                    }
+                };
+                xhr.send();
+            } else {
+                targetLabelDiv.style.display = "none";
+            }
+        }
+
+        function submitForm() {
+            var attackType = document.getElementById("attack_type").value;
+            var ysTarget = null;
+            if (attackType === "jsma") {
+                var targetLabelSelect = document.getElementById("target_label");
+                ysTarget = parseInt(targetLabelSelect.value);
+                console.log("Selected ysTarget:", ysTarget); // 添加调试语句
+            }
+            console.log("Final ysTarget:", ysTarget); // 添加调试语句
+            document.getElementById("ys_target").value = ysTarget;
+            document.getElementById("attack_form").submit();
+        }
+
+
+
     </script>
 </body>
 </html>

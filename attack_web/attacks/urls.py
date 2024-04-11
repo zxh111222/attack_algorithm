@@ -11,6 +11,7 @@ urlpatterns = [
     path('return_to_login/', views.login, name='return_to_login'),
     path('logout/', views.logout, name='logout'),
     path('index/', views.index, name='index'),  # 首页路径
+    path('get_target_labels/', views.get_target_labels, name='get_target_labels'),
     path('attack/', views.attack, name='attack'),
     path('save_adversarial_images/', views.save_adversarial_images, name='save_adversarial_images'),
 ]
