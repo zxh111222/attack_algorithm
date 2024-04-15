@@ -96,7 +96,7 @@
             margin-bottom: 20px;
         }
 
-        #signup .signup-header h3 {
+        #signup .signup-header h2 {
             color: #333333;
             font-size: 24px;
             font-weight: bold;
@@ -165,7 +165,7 @@
         /*}*/
 
 
-        /* 调整登录按钮样式 */
+
         .register-button {
             margin-top: 20px;
             margin-left: 25px;
@@ -181,7 +181,7 @@
             text-align: center;
         }
 
-        /* 调整注册按钮样式 */
+
         .cancel-button {
             margin-top: 20px;
             margin-right: 25px;
@@ -234,12 +234,12 @@
     <main>
         <div class="signup-container">
             {% if error_message %}
-                <p>{{ error_message }}</p>
+                <p style="color: red;">{{ error_message }}</p>
             {% endif %}
             <form id="signup" method="post">
                 {% csrf_token %}
                 <div class="signup-header">
-                    <h3>注  册</h3>
+                    <h2>注  册</h2>
                     <p>请注册对抗攻击系统账号密码</p>
                 </div>
                 <div class="sep"></div>

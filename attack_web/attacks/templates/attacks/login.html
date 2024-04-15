@@ -107,7 +107,7 @@
             margin-bottom: 20px;
         }
 
-        #signin .signin-header h3 {
+        #signin .signin-header h2 {
             color: #333333;
             font-size: 24px;
             font-weight: bold;
@@ -264,12 +264,12 @@
         <div class="login-container">
             <!-- 显示错误信息 -->
             {% if error_message %}
-                <p>{{ error_message }}</p>
+                <p style="color: red;">{{ error_message }}</p>
             {% endif %}
             <form id="signin" method="post">
                 {% csrf_token %}
                 <div class="signin-header">
-                    <h3>登  录</h3>
+                    <h2>登  录</h2>
                     <p>请输入账号密码登录系统</p>
                 </div>
                 <div class="sep"></div>
