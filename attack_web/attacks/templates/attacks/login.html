@@ -4,30 +4,53 @@
     <meta charset="UTF-8">
     <title>登录</title>
     {% load static %}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <style>
         /* 调整页面布局 */
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe Script', cursive;
             /*background-color: #f0f0f0;*/
-            background-image: linear-gradient(to right, #7391d4, #7695d8, #7a99db, #7d9edf, #81a2e2, #79aceb, #71b5f2, #69bff8, #52cffe, #41dfff, #46eefa, #5ffbf1);
+            background-image: url("{% static '2.jpg' %}");
+            background-size: cover;
+            background-position: center;
             margin: 0;
             padding: 0;
-            height: 100vh;
+            height: 90vh;
         }
 
         /* 固定导航栏 */
-        nav.navbar {
-            background-image: linear-gradient(to right, #7391d4, #7695d8, #7a99db, #7d9edf, #81a2e2, #79aceb, #71b5f2, #69bff8, #52cffe, #41dfff, #46eefa, #5ffbf1);
-            position: fixed;
-            border-bottom: 1px solid black;
-            top: 0;
+        .nav {
+            height: 60px;
             width: 100%;
-            z-index: 1000; /* 确保导航栏位于其他内容之上 */
+            border-bottom: 1px solid black;
+            display: flex;
+            justify-self: flex-start;
+            align-self: flex-start;
+        }
+        .navbar-nav {
+            display: inline-block; /* 设置导航栏列表项为inline-block元素 */
+            list-style: none;
+            height: 60px; /* 设置列表项高度为60px */
+            line-height: 60px;
+            padding: 0 90px; /* 设置列表项左右内边距为40px */
         }
 
-        img {
-            margin-left: 40px;
+
+        /* 导航栏链接样式 */
+        .nav-link {
+            color: #000; /* 设置链接颜色为黑色 */
+            text-decoration: none; /* 去掉链接下划线 */
+        }
+
+        .attack-img {
+            width: 40px;
+            height: 40px;
+            margin: -10px;
+        }
+
+        .text-attack {
+            padding-left: 30px;
+            font-size: 30px;
+            margin-bottom: 20px;
         }
 
         main {
@@ -37,127 +60,244 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
         }
 
-        .text-attack {
-            padding-left: 30px;
 
-        }
 
         /* 调整登录框样式 */
         .login-container {
-            background-color: #fff;
-            width: 80%;
-            max-width: 400px;
+            height: 350px;
+            width: 406px;
+            max-width: 550px;
             padding: 5px;
             border-radius: 8px;
-            box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
         }
 
-        /* 调整输入框和标签样式 */
-        input[type="text"], input[type="password"] {
-            margin-top: 2px;
-            width: 100%;
+        /*!* 调整输入框和标签样式 *!*/
+        /*input[type="text"], input[type="password"] {*/
+        /*    margin-top: 2px;*/
+        /*    margin-bottom: 20px;*/
+        /*    width: 100%;*/
+        /*}*/
+
+        /*label {*/
+        /*    margin-bottom: 2px;*/
+        /*    margin-top: 20px;*/
+        /*    width: 100%;*/
+        /*}*/
+
+        #signin {
+            padding: 0px 25px 25px;
+            background-color: rgba(240, 240, 240, 0.8);
+            box-shadow:
+                0px 0px 0px 5px rgba( 255,255,255,0.4 ),
+                0px 4px 20px rgba( 0,0,0,0.33 );
+            -moz-border-radius: 5px;
+            -webkit-border-radius: 5px;
+            border-radius: 5px;
+            display: table;
+            position: static;
         }
 
-        label {
-            margin-bottom: 2px;
+        #signin .signin-header {
+            margin-bottom: 20px;
+        }
+
+        #signin .signin-header h3 {
+            color: #333333;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        #signin .signin-header p {
+            color: #8f8f8f;
+            font-size: 14px;
+            font-weight: 300;
+        }
+
+        #signin .sep {
+            height: 1px;
+            background: #e8e8e8;
+            width: 406px;
+            margin: 0px -25px;
+        }
+
+        #signin .inputs {
+            margin-top: 25px;
+        }
+
+        #signin .inputs label {
+            color: #8f8f8f;
+            font-size: 12px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            margin-bottom: 7px;
+            display: block;
+        }
+
+        input::-webkit-input-placeholder {
+            color:    #b5b5b5;
+        }
+
+        input:-moz-placeholder {
+            color:    #b5b5b5;
+        }
+
+        #signin .inputs input[name=username], input[name=password] {
+            background: #f5f5f5;
+            font-size: 0.8rem;
+            -moz-border-radius: 3px;
+            -webkit-border-radius: 3px;
+            border-radius: 3px;
+            border: none;
+            padding: 13px 10px;
+            width: 330px;
+            margin-bottom: 20px;
+            box-shadow: inset 0px 2px 3px rgba( 0,0,0,0.1 );
+            clear: both;
+        }
+
+        #signin .inputs input[name=username]:focus, input[name=password]:focus {
+            background: #fff;
+            box-shadow: 0px 0px 0px 3px #fff38e, inset 0px 2px 3px rgba( 0,0,0,0.2 ), 0px 5px 5px rgba( 0,0,0,0.15 );
+            outline: none;
+        }
+
+        #signin .inputs .checkboxy {
+            display: block;
+            position: static;
+            height: 25px;
             margin-top: 10px;
-            width: 100%;
+            clear: both;
         }
 
-        .text-intro {
-            align-self: flex-start;
-            padding: 5px;
-            margin: 0px 100px;
-            margin-bottom: 150px;
-            width: 300px;
-            height: 200px;
-            position: absolute;
-            border: 1px solid black;
+        #signin .inputs input[type=checkbox] {
+            float: left;
+            margin-right: 10px;
+            margin-top: 3px;
         }
 
-        /* 调整按钮样式 */
+        #signin .inputs label.terms {
+            float: left;
+            font-size: 14px;
+            font-style: italic;
+        }
+
+
+        /* 调整登录按钮样式 */
         .login-button{
             margin-top: 20px;
-            margin-left: 30px;
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-
+            margin-left: 25px;
+            background: #1188f5;
+            background: linear-gradient(#1188f5, #dee2e6);
+            border-radius: 10px;
+            width: 80px;
+            height: 40px;
+            color: #ffffff;
+            border: 1px solid white;
+            display: inline-block;
+            font: italic 16px/1 sans-serif;
+            text-align: center;
         }
 
         /* 调整注册按钮样式 */
         .register-button {
             margin-top: 20px;
-            margin-right: 30px;
-            padding: 10px 20px;
-            background-color: #008CBA;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
+            margin-right: 25px;
+            background: #1fe018;
+            background: linear-gradient(#1fe018, #d2dce5);
+            border-radius: 10px;
+            width: 80px;
+            height: 40px;
+            color: #ffffff;
+            border: 1px solid white;
+            display: inline-block;
+            font: italic 16px/1 sans-serif;
+            text-align: center;
         }
 
         .login-button:hover {
-            background-color: #45a049;
+            background: linear-gradient(to bottom, #378de5 5%, #79bbff 100%);
+	        background-color: #378de5;
+        }
+
+        .login-button:active {
+            position:relative;
+	        top:1px;
         }
         .register-button:hover {
-            background-color: #0879B9;
+            background: linear-gradient(to bottom, #1fe018 5%, #61f032 100%);
+            background-color: #1fe018;
         }
-        .intro {
-            text-indent: 2em;
+        .register-button:active {
+            position:relative;
+	        top:1px;
         }
+
 
     </style>
 </head>
 <body>
-    <header>
-        <nav class="navbar bg-body-tertiary">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="#">
-                    <img src="{% static 'attack.png' %}" alt="Logo" width="25" height="25" class="d-inline-block align-text-top">
+
+    <div class="nav">
+
+        <div class="navbar-nav">
+
+                <img src="{% static 'attack.png' %}" alt="Logo" class="attack-img">
+                <a class="nav-link" href="#">
                     <span class="text-attack">对抗攻击系统</span>
                 </a>
-            </div>
-        </nav>
-    </header>
 
+        </div>
+
+    </div>
 
     <main>
-<!--        <div class="text-intro">-->
-<!--            <p class="intro" >对抗攻击系统基于高效的对抗攻击算法实现，比如FGSM、PGD、DeepFool等算法，能在短时间内生成符合参数设置的图像。<br></p>-->
-<!--            <p class="intro" >这些算法通过微小的扰动来欺骗深度学习模型，使其产生错误的输出。</p>-->
-<!--        </div>-->
+
+
+
         <div class="login-container">
-            <h1>登录</h1>
             <!-- 显示错误信息 -->
             {% if error_message %}
                 <p>{{ error_message }}</p>
             {% endif %}
-            <form method="post">
+            <form id="signin" method="post">
                 {% csrf_token %}
-                <label for="username">用户名：</label>
-                <input type="text" id="username" name="username" required><br>
-                <label for="password">密码：</label>
-                <input type="password" id="password" name="password" required><br>
+                <div class="signin-header">
+                    <h3>登  录</h3>
+                    <p>请输入账号密码登录系统</p>
+                </div>
+                <div class="sep"></div>
+                <div class="inputs">
+                    <input type="text" name="username" placeholder="Username" autofocus/>
+                    <input type="password" name="password" placeholder="Password"/>
+                    <div class="checkboxy">
+                        <input name="cecky" id="checky" value="1" type="checkbox"/><label class="terms">接受我们的协议</label>
+                    </div>
+                </div>
+<!--                <label for="username">用户名：</label>-->
+<!--                <input type="text" id="username" name="username" required><br>-->
+<!--                <label for="password">密码：</label>-->
+<!--                <input type="password" id="password" name="password" required><br>-->
                 <!-- 登录按钮和注册按钮 -->
                 <div style="display: flex; justify-content: space-between; width: 100%;">
                     <input type="submit" class="login-button" value="登录">
-                    <button class="register-button" onclick="window.location.href='{% url 'register' %}'">注册</button>
+                    <button type="button" class="register-button" onclick="redirectToRegister()">注册</button>
                 </div>
             </form>
         </div>
     </main>
+
+    <script>
+        function redirectToRegister() {
+            window.location.href = "{% url 'register' %}";
+        }
+    </script>
 
 
 </body>

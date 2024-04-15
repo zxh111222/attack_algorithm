@@ -4,36 +4,63 @@
     <meta charset="UTF-8">
     <title>注册</title>
     {% load static %}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe Script', cursive;
             /*background-color: #f0f0f0;*/
-            background-image: linear-gradient(to right, #7391d4, #7695d8, #7a99db, #7d9edf, #81a2e2, #79aceb, #71b5f2, #69bff8, #52cffe, #41dfff, #46eefa, #5ffbf1);
+            background-image: url("{% static '2.jpg' %}");
+            background-size: cover;
+            background-position: center;
             margin: 0;
             padding: 0;
-            height: 100vh;
+            height: 90vh;
         }
         /* 固定导航栏 */
-        nav.navbar {
-            background-image: linear-gradient(to right, #7391d4, #7695d8, #7a99db, #7d9edf, #81a2e2, #79aceb, #71b5f2, #69bff8, #52cffe, #41dfff, #46eefa, #5ffbf1);
-            position: fixed;
-            border-bottom: 1px solid black;
-            top: 0;
+        .nav {
+            height: 60px;
             width: 100%;
-            z-index: 1000; /* 确保导航栏位于其他内容之上 */
+            border-bottom: 1px solid black;
+            display: flex;
+            justify-self: flex-start;
+            align-self: flex-start;
+        }
+        .navbar-nav {
+            display: inline-block; /* 设置导航栏列表项为inline-block元素 */
+            list-style: none;
+            height: 60px; /* 设置列表项高度为60px */
+            line-height: 60px;
+            padding: 0 90px; /* 设置列表项左右内边距为40px */
         }
 
-        .container {
-            background-color: #fff;
-            width: 80%;
-            max-width: 400px;
+
+        /* 导航栏链接样式 */
+        .nav-link {
+            color: #000; /* 设置链接颜色为黑色 */
+            text-decoration: none; /* 去掉链接下划线 */
+        }
+
+        .attack-img {
+            width: 40px;
+            height: 40px;
+            margin: -10px;
+        }
+
+        .text-attack {
+            padding-left: 30px;
+            font-size: 30px;
+            margin-bottom: 20px;
+        }
+
+        .signup-container {
+            height: 350px;
+            width: 406px;
+            max-width: 550px;
             padding: 5px;
             border-radius: 8px;
-            box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
         }
 
         main {
@@ -43,108 +70,198 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
         }
 
-        img {
-            margin-left: 40px;
+
+        /*label {*/
+        /*    margin-bottom: 2px;*/
+        /*    margin-top: 10px;*/
+        /*    width: 100%;*/
+        /*}*/
+
+        #signup {
+            padding: 0px 25px 25px;
+            background-color: rgba(240, 240, 240, 0.8);
+            box-shadow:
+                0px 0px 0px 5px rgba( 255,255,255,0.4 ),
+                0px 4px 20px rgba( 0,0,0,0.33 );
+            -moz-border-radius: 5px;
+            -webkit-border-radius: 5px;
+            border-radius: 5px;
+            display: table;
+            position: static;
         }
 
-        .text-attack {
-            padding-left: 15px;
+        #signup .signup-header {
+            margin-bottom: 20px;
         }
 
-        label {
-            margin-bottom: 2px;
-            margin-top: 10px;
-            width: 100%;
+        #signup .signup-header h3 {
+            color: #333333;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
         }
 
-        input[type="text"],
-        input[type="password"] {
-            margin-top: 2px;
-            width: 100%;
+        #signup .signup-header p {
+            color: #8f8f8f;
+            font-size: 14px;
+            font-weight: 300;
         }
 
-        input[type="submit"] {
-            margin-top: 20px;
-            margin-left: 30px;
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
+        #signup .sep {
+            height: 1px;
+            background: #e8e8e8;
+            width: 406px;
+            margin: 0px -25px;
+        }
+
+        #signup .inputs {
+            margin-top: 25px;
+        }
+
+        #signup .inputs label {
+            color: #8f8f8f;
+            font-size: 12px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            margin-bottom: 7px;
+            display: block;
+        }
+
+        input::-webkit-input-placeholder {
+            color:    #b5b5b5;
+        }
+
+        input:-moz-placeholder {
+            color:    #b5b5b5;
+        }
+
+        #signup .inputs input[name=username], input[name=password], input[name=confirm_password] {
+            background: #f5f5f5;
+            font-size: 0.8rem;
+            -moz-border-radius: 3px;
+            -webkit-border-radius: 3px;
+            border-radius: 3px;
             border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
+            padding: 13px 10px;
+            width: 330px;
+            margin-bottom: 20px;
+            box-shadow: inset 0px 2px 3px rgba( 0,0,0,0.1 );
+            clear: both;
         }
 
-        input[type="button"] {
-            margin-top: 20px;
-            margin-right: 30px;
-            padding: 10px 20px;
-            background-color: #008CBA;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
+        #signup .inputs input[name=username]:focus, input[name=password]:focus, input[name=confirm_password]:focus {
+            background: #fff;
+            box-shadow: 0px 0px 0px 3px #fff38e, inset 0px 2px 3px rgba( 0,0,0,0.2 ), 0px 5px 5px rgba( 0,0,0,0.15 );
+            outline: none;
         }
 
 
-        input[type="submit"]:hover {
-            background-color: #45a049;
-        }
+        /*#signup .inputs input[type=checkbox] {*/
+        /*    float: left;*/
+        /*    margin-right: 10px;*/
+        /*    margin-top: 3px;*/
+        /*}*/
 
-        input[type="button"]:hover {
-            background-color: #0879B9;
-        }
 
+        /* 调整登录按钮样式 */
         .register-button {
-            margin-left:0px;
+            margin-top: 20px;
+            margin-left: 25px;
+            background: #1188f5;
+            background: linear-gradient(#1188f5, #dee2e6);
+            border-radius: 10px;
+            width: 80px;
+            height: 40px;
+            color: #ffffff;
+            border: 1px solid white;
+            display: inline-block;
+            font: italic 16px/1 sans-serif;
+            text-align: center;
         }
 
+        /* 调整注册按钮样式 */
         .cancel-button {
-            background-color: #f44336;
-            margin-right:0px;
+            margin-top: 20px;
+            margin-right: 25px;
+            background: #1fe018;
+            background: linear-gradient(#1fe018, #d2dce5);
+            border-radius: 10px;
+            width: 80px;
+            height: 40px;
+            color: #ffffff;
+            border: 1px solid white;
+            display: inline-block;
+            font: italic 16px/1 sans-serif;
+            text-align: center;
         }
 
+        .register-button:hover {
+            background: linear-gradient(to bottom, #378de5 5%, #79bbff 100%);
+	        background-color: #378de5;
+        }
+
+        .register-button:active {
+            position:relative;
+	        top:1px;
+        }
         .cancel-button:hover {
-            background-color: #d32f2f;
+            background: linear-gradient(to bottom, #1fe018 5%, #61f032 100%);
+            background-color: #1fe018;
+        }
+        .cancel-button:active {
+            position:relative;
+	        top:1px;
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <nav class="navbar bg-body-tertiary">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="#" >
-                    <img src="{% static 'attack.png' %}" alt="Logo" width="25" height="25" class="d-inline-block align-text-top">
+    <div class="nav">
+
+        <div class="navbar-nav">
+
+                <img src="{% static 'attack.png' %}" alt="Logo" class="attack-img">
+                <a class="nav-link" href="#">
                     <span class="text-attack">对抗攻击系统</span>
                 </a>
-            </div>
-        </nav>
-    </header>
+
+        </div>
+
+    </div>
 
     <main>
-        <div class="container">
-            <h1>注册</h1>
+        <div class="signup-container">
             {% if error_message %}
                 <p>{{ error_message }}</p>
             {% endif %}
-            <form method="post">
+            <form id="signup" method="post">
                 {% csrf_token %}
-                <label for="username">用户名:</label>
-                <input type="text" id="username" name="username" required><br>
-                <label for="password">密码:</label>
-                <input type="password" id="password" name="password" required><br>
+                <div class="signup-header">
+                    <h3>注  册</h3>
+                    <p>请注册对抗攻击系统账号密码</p>
+                </div>
+                <div class="sep"></div>
+                <div class="inputs">
+                    <input type="text" name="username" placeholder="Username" autofocus/>
+                    <input type="password" name="password" placeholder="Password"/>
+                    <input type="password" name="confirm_password" placeholder="Password repeatedly"/>
+                </div>
                 <div style="display: flex; justify-content: space-between; width: 100%;">
                     <input class="register-button" type="submit" value="注册">
-                    <input type="button" class="cancel-button" value="取消注册" onclick="window.location.href='{% url 'return_to_login' %}'">
+                    <button type="button" class="cancel-button" onclick="returnToLogin()">返回</button>
                 </div>
             </form>
         </div>
     </main>
+
+
+    <script>
+        function returnToLogin() {
+            window.location.href = "{% url 'return_to_login' %}";
+        }
+    </script>
 
 </body>
 </html>
