@@ -5,29 +5,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>攻击结果</title>
     {% load static %}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Lato&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe Script', cursive;
             /*background-color: #f0f0f0;*/
-            background-image: linear-gradient(to right, #7391d4, #7695d8, #7a99db, #7d9edf, #81a2e2, #79aceb, #71b5f2, #69bff8, #52cffe, #41dfff, #46eefa, #5ffbf1);
+            background-image: url("{% static '2.jpg' %}");
+            background-size: cover;
+            background-position: center;
             margin: 0;
             padding: 0;
-            height: 100vh;
+            height: 90vh;
         }
+
+        /*######################################*/
 
         /* 固定导航栏 */
-        nav.navbar {
-            background-image: linear-gradient(to right, #7391d4, #7695d8, #7a99db, #7d9edf, #81a2e2, #79aceb, #71b5f2, #69bff8, #52cffe, #41dfff, #46eefa, #5ffbf1);
-            position: fixed;
-            border-bottom: 1px solid black;
-            top: 0;
+        .nav {
+            height: 60px;
             width: 100%;
-            z-index: 1000; /* 确保导航栏位于其他内容之上 */
+            border-bottom: 1px solid black;
+            display: flex;
+            justify-self: flex-start;
+            align-self: flex-start;
+        }
+        .navbar-nav {
+            display: inline-block; /* 设置导航栏列表项为inline-block元素 */
+            list-style: none;
+            height: 60px; /* 设置列表项高度为60px */
+            line-height: 60px;
+            padding: 0 90px; /* 设置列表项左右内边距为40px */
         }
 
-        img {
-            margin-left: 40px;
+
+        /* 导航栏链接样式 */
+        .nav-link {
+            color: #000; /* 设置链接颜色为黑色 */
+            text-decoration: none; /* 去掉链接下划线 */
+        }
+
+        .attack-img {
+            width: 40px;
+            height: 40px;
+            margin: -10px;
+        }
+
+        .text-attack {
+            padding-left: 30px;
+            font-size: 30px;
+            margin-bottom: 20px;
+        }
+        /*#####################################*/
+
+        .rule {
+          margin: 2px 0 10px 0;
+          border: none;
+          height: 1px;
+          background-image: linear-gradient(to left, #f0f0f0, #c9bbae, #f0f0f0);
         }
 
         main {
@@ -40,24 +74,42 @@
             flex-direction: column;
         }
 
-        .container {
-            background-color: #fff;
-            width: 80%;
-            width: 900px;
+        .result-container {
+            width: 650px;
+            max-width: 650px;
             padding: 5px;
             border-radius: 8px;
-            box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+            text-align: center;
             display: flex;
             flex-direction: column;
             align-items: center;
-            text-align: center;
-            margin-top: 500px;
-            margin-bottom: 400px;
+            justify-content: center;
         }
 
-        h1 {
-            margin-top: 20px;
-            margin-bottom: 20px;
+        .result-little-container {
+            width: 750px;
+            max-width: 750px;
+            padding: 0px 25px 25px;
+            background-color: rgba(240, 240, 240, 0.8);
+            box-shadow:
+                0px 0px 0px 5px rgba( 255,255,255,0.4 ),
+                0px 4px 20px rgba( 0,0,0,0.33 );
+            -moz-border-radius: 5px;
+            -webkit-border-radius: 5px;
+            border-radius: 5px;
+            display: table;
+            position: static;
+        }
+
+        h2 {
+            color: #333333;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .result-header {
+            margin-bottom: 30px;
         }
 
 
@@ -69,15 +121,16 @@
 
         .image-container {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            margin-top: 20px;
+            margin: 5px 55px;
         }
 
         .image-container img {
-            width: 250px;
-            height: 250px;
-            margin: 10px 30px;
+            width: 225px;
+            height: 225px;
+            margin: 5px 20px;
         }
 
         .prediction-info {
@@ -87,36 +140,56 @@
             margin-top: 10px;
         }
 
-        .prediction-info p {
-            margin: 0 40px;
+        .prediction-info h4 {
+            margin: 0 90px;
         }
 
-        .button-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 20px;
+
+        #saveImageButton {
+            margin: 20px 50px;
+            background: #1188f5;
+            background: linear-gradient(#1188f5, #dee2e6);
+            border-radius: 10px;
+            width: 120px;
+            height: 36px;
+            color: #ffffff;
+            border: 1px solid white;
+            display: inline-block;
+            font: italic 16px/1 sans-serif;
+            text-align: center;
         }
 
-        #returnButton, #saveImageButton {
-            margin-top: 20px;
-            margin-bottom: 20px;
+
+        #returnButton {
+            margin: 20px 50px;
+            background: #1fe018;
+            background: linear-gradient(#1fe018, #d2dce5);
+            border-radius: 10px;
+            width: 120px;
+            height: 36px;
+            color: #ffffff;
+            border: 1px solid white;
+            display: inline-block;
+            font: italic 16px/1 sans-serif;
+            text-align: center;
         }
 
-        button {
-            margin: 10px 0;
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-            margin: 0 10px; /* 按钮之间的间距 */
+        #saveImageButton:hover {
+            background: linear-gradient(to bottom, #378de5 5%, #79bbff 100%);
+	        background-color: #378de5;
         }
 
-        button:hover {
-            background-color: #45a049;
+        #saveImageButton:active {
+            position:relative;
+	        top:1px;
+        }
+        #returnButton:hover {
+            background: linear-gradient(to bottom, #1fe018 5%, #61f032 100%);
+            background-color: #1fe018;
+        }
+        #returnButton:active {
+            position:relative;
+	        top:1px;
         }
 
         form {
@@ -126,57 +199,60 @@
 </head>
 <body>
 
-    <header>
-        <nav class="navbar bg-body-tertiary">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="#">
-                    <img src="{% static 'attack.png' %}" alt="Logo" width="25" height="25" class="d-inline-block align-text-top">
+    <div class="nav">
+        <div class="navbar-nav">
+                <img src="{% static 'attack.png' %}" alt="Logo" class="attack-img">
+                <a class="nav-link" href="#">
                     <span class="text-attack">对抗攻击系统</span>
                 </a>
-            </div>
-        </nav>
-    </header>
+        </div>
+    </div>
 
     <main>
-        <div class="container">
-            <h1>攻击后原始图像和对抗图像对比</h1>
-            {% if result %}
-                <div class="img-container">
-                    <div class="image-container">
-                        <h5>原始图像:</h5>
-                        <img src="data:image/png;base64,{{ result.original_image }}" alt="原始图像">
+        <div class="result-container">
+            <div class="result-little-container">
+                <h2 class="result-header">攻击后原始图像和对抗图像对比</h2>
+                <hr class="rule">
+                {% if result %}
+                    <div class="img-container">
+                        <div class="image-container">
+                            <h4>原始图像:</h4>
+                            <img src="data:image/png;base64,{{ result.original_image }}" alt="原始图像">
+                        </div>
+
+                        {% if result.adversarial_image %}
+
+                        <div class="image-container">
+                            <h4>对抗图像:</h4>
+                            <img src="data:image/png;base64,{{ result.adversarial_image }}" alt="对抗图像">
+                        </div>
                     </div>
 
-                    {% if result.adversarial_image %}
-
-                    <div class="image-container">
-                        <h5>对抗图像:</h5>
-                        <img src="data:image/png;base64,{{ result.adversarial_image }}" alt="对抗图像">
+                    <div class="prediction-info">
+                        <h4>原始预测：{{ result.original_label }}</h4>
+                        <h4>攻击后预测：{{ result.attacked_label }}</h4>
                     </div>
-                </div>
 
-                <div class="prediction-info">
-                    <p>原始预测：{{ result.original_label }}</p>
-                    <p>攻击后预测：{{ result.attacked_label }}</p>
-                </div>
+                    <hr class="rule">
 
-                <!-- 保存对抗图像的按钮 -->
-                <button id="saveImageButton">保存对抗图像</button>
+                    <!-- 保存对抗图像的按钮 -->
+                    <button id="saveImageButton">保存对抗图像</button>
 
-                <!-- 返回按钮 -->
-                <button id="returnButton" form="backToIndexForm" type="submit">返回首页</button>
+                    <!-- 返回按钮 -->
+                    <button id="returnButton" form="backToIndexForm" type="submit">返回首页</button>
 
+                    {% endif %}
+
+                    <!-- 返回按钮 -->
+                    <form id="backToIndexForm" action="{% url 'index' %}" method="get" style="display: none;">
+                        <!-- 这里的 style="display: none;" 是为了在点击按钮时不显示表单 -->
+                        <input type="hidden">
+                    </form>
+
+                {% else %}
+                    <p>无结果可用。</p>
                 {% endif %}
-
-                <!-- 返回按钮 -->
-                <form id="backToIndexForm" action="{% url 'index' %}" method="get" style="display: none;">
-                    <!-- 这里的 style="display: none;" 是为了在点击按钮时不显示表单 -->
-                    <input type="hidden">
-                </form>
-
-            {% else %}
-                <p>无结果可用。</p>
-            {% endif %}
+            </div>
         </div>
     </main>
 
